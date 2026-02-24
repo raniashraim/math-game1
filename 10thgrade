@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>تحدي الرياضيات المتميز - رانية شريم</title>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
+    <style>
+        :root { --primary: #1a73e8; --secondary: #34a853; --accent: #fbbc05; --bg: #f8f9fa; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; overflow-x: hidden; }
+        .card { background: white; padding: 40px; border-radius: 25px; box-shadow: 0 20px 50px rgba(0,0,0,0.1); width: 90%; max-width: 650px; text-align: center; position: relative; border: 1px solid #eee; transition: 0.5s; }
+        h1 { color: var(--primary); font-size: 2.2em; margin-bottom: 10px; }
+        .teacher-info { color: #5f6368; font-size: 1.2em; margin-bottom: 30px; display: block; }
+        input[type="text"] { padding: 15px; width: 80%; border: 2px solid #ddd; border-radius: 12px; margin-bottom: 25px; font-size: 18px; text-align: center; outline: none; }
+        .btn { background: linear-gradient(135deg, #34a853, #2d8e47); color: white; border: none; padding: 15px 30px; font-size: 18px; border-radius: 12px; cursor: pointer; width: 100%; margin: 10px 0; font-weight: bold; transition: 0.3s; box-shadow: 0 4px 15px rgba(52,168,83,0.3); }
+        .btn:hover { transform: translateY(-3px); box-shadow: 0 6px 20px rgba(52,168,83,0.4); }
+        .option-btn { background: #fff; color: #3c4043; border: 2px solid #e0e0e0; margin: 8px 0; text-align: right; padding: 15px; width: 100%; border-radius: 12px; cursor: pointer; font-size: 1.1em; transition: 0.2s; }
+        .option-btn:hover { background: #f8faff; border-color: var(--primary); color: var(--primary); }
+        .hidden { display: none; }
+        #feedback { margin: 20px; font-weight: bold; font-size: 1.4em; min-height: 45px; }
+        .certificate-container { border: 15px double var(--accent); padding: 40px; background: #fffdf2; border-radius: 15px; text-align: center; }
+        .student-name-display { color: var(--primary); font-size: 2.5em; margin: 15px 0; border-bottom: 3px solid var(--primary); display: inline-block; padding: 0 30px; }
+        .progress-container { width: 100%; background: #eee; height: 10px; border-radius: 5px; margin-bottom: 20px; }
+        .progress-bar { height: 100%; background: var(--primary); width: 0%; border-radius: 5px; transition: 0.4s; }
+        @media print { .no-print { display: none; } body { background: white; } .card { box-shadow: none; border: none; width: 100%; } }
+    </style>
+</head>
+<body>
+
+    <audio id="sound-correct" src="https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3"></audio>
+    <audio id="sound-wrong" src="https://assets.mixkit.co/active_storage/sfx/2003/2003-preview.mp3"></audio>
+    <audio id="sound-win" src="https://assets.mixkit.co/active_storage/sfx/2013/2013-preview.mp3"></audio>
+
+<div class="card">
+    <div id="start-page">
+        <h1>📐 رحلة الاقترانات المثلثية</h1>
+        <span class="teacher-info">بإشراف المعلمة المتميزة: <b>رانية شريم</b></span>
+        <p style="font-size: 1.2em;">ادخل اسمك لتبدأ التحدي</p>
+        <input type="text" id="student-name" placeholder="اسم الطالب الثلاثي...">
+        <button class="btn" onclick="startQuiz()">ابدأ التحدي الآن 🚀</button>
+    </div>
+
+    <div id="quiz-page" class="hidden">
+        <div class="progress-container"><div class="progress-bar" id="pg-bar"></div></div>
+        <div style="color: #888; margin-bottom: 10px;" id="prog-text"></div>
+        <h2 id="question-display"></h2>
+        <div id="options-area"></div>
+        <div id="feedback"></div>
+    </div>
+
+    <div id="end-page" class="hidden">
+        <div class="certificate-container" id="printable-cert">
+            <h2 style="color: #c5221f;">شهادة إنجاز متميز</h2>
+            <p>تمنح المعلمة <b>رانية شريم</b> هذه الشهادة للفخر بـ:</p>
+            <div class="student-name-display" id="final-name"></div>
+            <p>لاجتيازه اختبار "الاقترانات المثلثية - المستوى المتقدم"</p>
+            <div style="font-size: 24px; font-weight: bold;">النتيجة: <span id="final-score" style="color: #34a853;"></span></div>
+            <div style="text-align: right; margin-top: 40px; font-weight: bold;">توقيع: المعلمة رانية شريم</div>
+        </div>
+        <div class="no-print" style="margin-top: 25px;">
+            <button class="btn" onclick="window.print()" style="background: #1a73e8;">تحميل أو طباعة الشهادة 🖨️</button>
+            <button class="btn" onclick="location.reload()" style="background: #5f6368;">إعادة التحدي 🔄</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // الأسئلة مع توزيع عشوائي للإجابة الصحيحة (تعديل أماكن الخيارات)
+    const quizData = [
+        { q: "ما هي معادلة دائرة الوحدة؟", a: "س² + ص² = 1", options: ["س + ص = 1", "س² + ص² = 1", "س² - ص² = 1"] }, // الخيار 2
+        { q: "الزاوية التي قياسها 150 درجة تقع في الربع:", a: "الثاني", options: ["الأول", "الثالث", "الثاني"] }, // الخيار 3
+        { q: "قيمة (جتا 60) تساوي:", a: "0.5", options: ["0.86", "1", "0.5"] }, // الخيار 3
+        { q: "ما هي زاوية الإسناد للزاوية 225 درجة؟", a: "45", options: ["45", "30", "60"] }, // الخيار 1
+        { q: "في الربع الثالث، تكون إشارة (الظل - ظا) هي:", a: "موجبة", options: ["سالبة", "صفر", "موجبة"] }, // الخيار 3
+        { q: "إذا قطع ضلع انتهاء الزاوية دائرة الوحدة في النقطة (س، ص)، فإن (جا هـ) يساوي:", a: "ص", options: ["س", "ص", "س/ص"] }, // الخيار 2
+        { q: "ما هي قيمة (جا 270) درجة؟", a: "-1", options: ["0", "1", "-1"] }, // الخيار 3
+        { q: "الزاوية التي قياسها -30 درجة تكافئ الزاوية الموجبة:", a: "330", options: ["330", "300", "210"] }, // الخيار 1
+        { q: "مقلوب اقتران الجيب (جا) هو:", a: "قتا", options: ["قا", "ظتا", "قتا"] }, // الخيار 3
+        { q: "أكمل المتطابقة الأساسية: جا²هـ + جتا²هـ = ...", a: "1", options: ["0", "2", "1"] }, // الخيار 3
+        
+        // المستوى المتقدم
+        { q: "إذا كان ضلع انتهاء هـ يمر بالنقطة ( -0.6 ، 0.8 ) على دائرة الوحدة، فما قيمة ظا هـ؟", a: "-1.33", options: ["-0.8", "0.6", "-1.33"] }, // الخيار 3
+        { q: "الزاوية التي قياسها (3π/4) راديان تكافئ بالدرجات:", a: "135", options: ["120", "135", "150"] }, // الخيار 2
+        { q: "قيمة جتا(-120) تساوي:", a: "-0.5", options: ["0.5", "0.86", "-0.5"] }, // الخيار 3
+        { q: "إذا كان جا هـ = 0.6 و هـ في الربع الثاني، فإن جتا هـ يساوي:", a: "-0.8", options: ["0.8", "0.4", "-0.8"] }, // الخيار 3
+        { q: "ما هي زاوية الإسناد للزاوية التي قياسها 330 درجة؟", a: "30", options: ["60", "30", "45"] }, // الخيار 2
+        { q: "أي القيم الآتية تساوي ظا(240)؟", a: "√3", options: ["1", "1/√3", "√3"] }, // الخيار 3
+        { q: "ما هي قيمة قا(60)؟", a: "2", options: ["2", "0.5", "√2"] }, // الخيار 1
+        { q: "الزاوية التي قياسها 750 درجة تكافئ في دورتها الأولى الزاوية:", a: "30", options: ["60", "90", "30"] }, // الخيار 3
+        { q: "إذا كان ظتا هـ = 1 ، و هـ في الربع الثالث، فإن هـ تساوي:", a: "225", options: ["135", "225", "45"] }, // الخيار 2
+        { q: "قيمة جتا(150) تساوي تماماً قيمة:", a: "-جتا(30)", options: ["جتا(30)", "جا(60)", "-جتا(30)"] } // الخيار 3
+    ];
+
+    let current = 0; let score = 0; let pName = "";
+
+    function startQuiz() {
+        pName = document.getElementById('student-name').value;
+        if(!pName) return alert("لطفاً، اكتب اسمك أولاً");
+        document.getElementById('start-page').classList.add('hidden');
+        document.getElementById('quiz-page').classList.remove('hidden');
+        showQ();
+    }
+
+    function showQ() {
+        const d = quizData[current];
+        document.getElementById('pg-bar').style.width = (current/20)*100 + "%";
+        document.getElementById('prog-text').innerText = `السؤال ${current + 1} من 20`;
+        document.getElementById('question-display').innerText = d.q;
+        document.getElementById('feedback').innerText = "";
+        const box = document.getElementById('options-area');
+        box.innerHTML = "";
+        d.options.forEach(o => {
+            const b = document.createElement('button');
+            b.className = 'option-btn';
+            b.innerText = o;
+            b.onclick = () => check(o, d.a);
+            box.appendChild(b);
+        });
+    }
+
+    function check(s, c) {
+        const btns = document.querySelectorAll('.option-btn');
+        btns.forEach(b => b.disabled = true);
+        if(s === c) {
+            score++;
+            document.getElementById('feedback').innerHTML = "<span style='color:var(--secondary)'>أحسنت! إجابة ذكية ✅</span>";
+            document.getElementById('sound-correct').play();
+        } else {
+            document.getElementById('feedback').innerHTML = `<span style='color:#d32f2f'>الجواب الصحيح هو: ${c}</span>`;
+            document.getElementById('sound-wrong').play();
+        }
+        setTimeout(() => {
+            current++;
+            if(current < quizData.length) showQ();
+            else finish();
+        }, 1500);
+    }
+
+    function finish() {
+        document.getElementById('quiz-page').classList.add('hidden');
+        document.getElementById('end-page').classList.remove('hidden');
+        document.getElementById('final-name').innerText = pName;
+        document.getElementById('final-score').innerText = `${score} من 20`;
+        document.getElementById('sound-win').play();
+        confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+    }
+</script>
+</body>
+</html>
